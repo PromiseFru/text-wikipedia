@@ -1,7 +1,7 @@
 # importing the module
 import wikipedia
 from flask import Flask, request, jsonify
-from wikipedia.exceptions import DisambiguationError
+from wikipedia.exceptions import DisambiguationError, PageError
 import requests
 
 app = Flask(__name__)
@@ -24,8 +24,32 @@ def in_data():
         print("--> Sending result to {}". format(number))
         requests.post("", json = payload)
         return {}, 200
-    except DisambiguationError as err:
-        print(err)
+    except DisambiguationError as e:
+        error = {
+            "auth_id":"",
+	        "data":[{
+		        "isp":"mtn",
+		        "number":"{}".format(number),
+		        "text":"{}: Please be more specific about '{}'".format(e.__class__.__name__, text)
+            }]
+        }
+        print("--> error: {}". format(e.__class__.__name__))
+        print("--> Sending error to {}". format(number))
+        requests.post("", json = error)
+        return str(e.__class__.__name__), 500
+    except PageError as e:
+        error = {
+            "auth_id":"",
+	        "data":[{
+		        "isp":"mtn",
+		        "number":"{}".format(number),
+		        "text":"{}: '{}' has not matching article".format(e.__class__.__name__, text)
+            }]
+        }
+        print("--> error: {}". format(e.__class__.__name__))
+        print("--> Sending error to {}". format(number))
+        requests.post("", json = error)
+        return str(e.__class__.__name__), 500
 
 if __name__ == '__main__':
     app.run(host="localhost", port=9000, debug=True)
