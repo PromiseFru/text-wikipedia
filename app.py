@@ -12,7 +12,7 @@ def in_data():
         data = request.json
         text = data["text"]
         number = data["phonenumber"]
-        result = wikipedia.summary("{}".format(text), sentences=1)
+        result = wikipedia.summary("({})".format(text), sentences=1)
         payload = {
             "auth_id":"",
 	        "data":[{
@@ -43,7 +43,7 @@ def in_data():
 	        "data":[{
 		        "isp":"mtn",
 		        "number":"{}".format(number),
-		        "text":"{}: '{}' has not matching article".format(e.__class__.__name__, text)
+		        "text":"{}: '{}' has no matching article".format(e.__class__.__name__, text)
             }]
         }
         print("--> error: {}". format(e.__class__.__name__))
