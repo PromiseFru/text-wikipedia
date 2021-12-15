@@ -1,9 +1,12 @@
 # importing the module
 import wikipedia
 from flask import Flask, request, jsonify
+import json
 from wikipedia.exceptions import DisambiguationError, PageError
 import requests
 import configparser
+import phonenumbers
+from phonenumbers import carrier
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -16,11 +19,12 @@ class swob_cluster:
 		self.isp = isp
 		self.text = text
 		self.number = number
-
+	
+	def __repr__(self):
 		payload = {
 			"auth_id": "{}".format(auth_id),
 			"data": [{
-				"isp": self.isp,
+				"isp": "{}".format(self.isp),
 				"number": "{}".format(self.number),
 				"text": "{}".format(self.text)}
 				]}
@@ -32,6 +36,14 @@ class swob_cluster:
 			print("Cluster error:")
 			print(str(e))
 
+class isp_finder:
+	def __init__(self, number):
+		self.number = number
+		
+	def __repr__(self):
+		number_ro = phonenumbers.parse(self.number, None)
+		number_carrier = carrier.name_for_number(number_ro, "en")
+		return(number_carrier.split()[0].lower())
 
 #app = Flask(__name__)
 #
