@@ -23,7 +23,8 @@ def swob_cluster(isp, text, number):
 			}]
 		}
 	try:
-		requests.post("{}/sms".format(url), json = payload)
+		re = requests.post("{}/sms".format(url), json = payload)
+		print("CLUSTER: {}".format(re))
 	except Exception as e:
 		print("Cluster error:")
 		print(str(e))
@@ -38,6 +39,7 @@ app = Flask(__name__)
 
 @app.route('/income', methods=['POST'])
 def in_data():
+	carrier = ""
 	try:
 		data = request.json
 		text = data["text"]
@@ -49,12 +51,14 @@ def in_data():
 		return "Online routing successful", 200
 	except DisambiguationError as e:
 		DisambiguationError_msg = "{}: Please be more specific about '{}'".format(e.__class__.__name__, text)
+		carrier = isp_finder("{}".format(number))
 		print("--> error: {}". format(e.__class__.__name__))
 		print("--> Sending error to {}". format(number))
 		swob_cluster(carrier, DisambiguationError_msg, number)
 		return str(e.__class__.__name__), 500
 	except PageError as e:
 		PageError_msg = "'{}' has no matching article".format(e.__class__.__name__, text)
+		carrier = isp_finder("{}".format(number))
 		print("--> error: {}". format(e.__class__.__name__))
 		print("--> Sending error to {}". format(number))
 		swob_cluster(carrier, PageError_msg, number)
