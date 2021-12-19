@@ -6,6 +6,7 @@ import requests
 import configparser
 import phonenumbers
 from phonenumbers import carrier
+import re
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -23,8 +24,9 @@ def swob_cluster(isp, text, number):
 			}]
 		}
 	try:
-		re = requests.post("{}/sms".format(url), json = payload)
-		print("CLUSTER: {}".format(re))
+		req_p = requests.post("{}/sms".format(url), json = payload)
+		print("CLUSTER: {}".format(req_p))
+		return True
 	except Exception as e:
 		print("Cluster error:")
 		print(str(e))
@@ -44,21 +46,28 @@ def in_data():
 		data = request.json
 		text = data["text"]
 		number = data["phonenumber"]
-		result = wikipedia.summary("({})".format(text), sentences=1)
-		carrier = isp_finder("{}".format(number))
+		result = re.sub("\"", "'", wikipedia.summary("({})".format(text), sentences=1))
+		carrier = isp_finder(number)
+		if result == "":
+			result = "'{}' has no matching article".format(text)
+			print("--> Sending error to {}". format(number))
+			swob_cluster(carrier, result, number)
+			return "Empty string", 500
 		print("--> Sending result to {}".format(number))
-		swob_cluster(carrier, result, number)
-		return "Online routing successful", 200
+		if swob_cluster(carrier, result, number):
+			return "Online routing successful", 200
+		else:
+			return "Online routing Failed", 400
 	except DisambiguationError as e:
 		DisambiguationError_msg = "{}: Please be more specific about '{}'".format(e.__class__.__name__, text)
-		carrier = isp_finder("{}".format(number))
+		carrier = isp_finder(number)
 		print("--> error: {}". format(e.__class__.__name__))
 		print("--> Sending error to {}". format(number))
 		swob_cluster(carrier, DisambiguationError_msg, number)
 		return str(e.__class__.__name__), 500
 	except PageError as e:
-		PageError_msg = "'{}' has no matching article".format(e.__class__.__name__, text)
-		carrier = isp_finder("{}".format(number))
+		PageError_msg = "{}: '{}' has no matching article".format(e.__class__.__name__, text)
+		carrier = isp_finder(number)
 		print("--> error: {}". format(e.__class__.__name__))
 		print("--> Sending error to {}". format(number))
 		swob_cluster(carrier, PageError_msg, number)
